@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Habit {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  icon        String   @default("circle")
+  color       String   @default("#0ea5e9")
+  frequency   String   @default("daily") // daily, weekly, custom
+  targetCount Int      @default(1)
+  unit        String?  // e.g., "glasses", "minutes", "km"
+  reminderTime String? // HH:MM format
+  reminderDays String? // comma-separated: "mon,tue,wed..."
+  category    String   @default("general")
+  archived    Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  logs        HabitLog[]
+}
+
+model HabitLog {
+  id        String   @id @default(cuid())
+  habitId   String
+  date      String   // YYYY-MM-DD format for easy querying
+  value     Int      @default(1) // count completed
+  note      String?
+  createdAt DateTime @default(now())
+  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+  @@index([date])
+  @@index([habitId])
+}
+
+model Goal {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  type        String   @default("weekly") // weekly, monthly, custom
+  startDate   String   // YYYY-MM-DD
+  endDate     String   // YYYY-MM-DD
+  status      String   @default("active") // active, completed, abandoned
+  priority    String   @default("medium") // low, medium, high
+  progress    Int      @default(0) // 0-100
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tasks       GoalTask[]
+}
+
+model GoalTask {
+  id        String   @id @default(cuid())
+  goalId    String
+  title     String
+  completed Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  goal      Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  pinned    Boolean  @default(false)
+  color     String   @default("#ffffff")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MoodEntry {
+  id        String   @id @default(cuid())
+  date      String   @unique // YYYY-MM-DD
+  mood      Int      // 1-5 scale
+  energy    Int?     // 1-5 scale
+  note      String?
+  createdAt DateTime @default(now())
+}
+
+model WaterLog {
+  id        String   @id @default(cuid())
+  date      String   @unique // YYYY-MM-DD
+  glasses   Int      @default(0)
+  target    Int      @default(8)
+  createdAt DateTime @default(now())
+}
+
+model JournalEntry {
+  id        String   @id @default(cuid())
+  date      String   @unique // YYYY-MM-DD
+  content   String
+  gratitude String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FitnessSync {
+  id         String   @id @default(cuid())
+  date       String   // YYYY-MM-DD
+  source     String   @default("amazfit") // amazfit, manual
+  steps      Int?
+  heartRate  Int?
+  sleep      Float?   // hours
+  calories   Int?
+  distance   Float?   // km
+  rawData    String?  // JSON string for extra data
+  createdAt  DateTime @default(now())
+
+  @@unique([date, source])
+}
